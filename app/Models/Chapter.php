@@ -4,25 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Chapter extends Model
+class ChapterImage extends Model
 {
     protected $fillable = [
-        'ebook_id',
-        'title',
-        'order_number',
-        'introduction',
-        'page_count'
+        'chapter_id',  // ID chapter yang terkait dengan gambar
+        'image_path'   // Lokasi penyimpanan gambar
     ];
 
-    public function ebook(): BelongsTo
+    /**
+     * Relasi: Setiap ChapterImage dimiliki oleh satu Chapter.
+     * 
+     * @return BelongsTo
+     */
+    public function chapter(): BelongsTo
     {
-        return $this->belongsTo(Ebook::class);
-    }
-
-    public function images(): HasMany
-    {
-        return $this->hasMany(ChapterImage::class);
+        return $this->belongsTo(Chapter::class);
     }
 }

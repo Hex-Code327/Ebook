@@ -26,7 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'points',
         'email_verified_at',
-        'last_active_at'
+        'last_active_at',
     ];
 
     /**
@@ -42,19 +42,16 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_paid' => 'boolean',
-            'role' => 'string',
-            'points' => 'integer',
-            'last_active_at' => 'datetime'
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_paid' => 'boolean',
+        'role' => 'string',
+        'points' => 'integer',
+        'last_active_at' => 'datetime',
+    ];
 
     /**
      * Get the user's ratings.
@@ -74,7 +71,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Check if the user has premium access.
-     * Now determined manually by admin through is_paid
+     * This is determined by the 'is_paid' field or being an admin.
      */
     public function hasPremiumAccess(): bool
     {

@@ -14,12 +14,12 @@ class Ebook extends Model
         'grade_level',
         'goal',
         'cover_image',
-        'is_free',
+        'is_free',           // Apakah ebook gratis
         'author',
         'published_date',
         'page_count',
         'language',
-        'is_active',
+        'is_active',         // Apakah ebook aktif
     ];
 
     protected $casts = [
@@ -29,7 +29,7 @@ class Ebook extends Model
     ];
 
     /**
-     * Relasi: Ebook memiliki banyak chapter
+     * Relasi: Ebook memiliki banyak chapter yang diurutkan berdasarkan nomor urutan
      */
     public function chapters(): HasMany
     {
@@ -46,6 +46,8 @@ class Ebook extends Model
 
     /**
      * Akses custom: URL gambar cover ebook
+     * 
+     * Jika ada cover image, gunakan URL dari penyimpanan, jika tidak ada, gunakan gambar default.
      */
     public function getCoverUrlAttribute(): string
     {
@@ -55,7 +57,7 @@ class Ebook extends Model
     }
 
     /**
-     * Scope: Hanya ebook gratis
+     * Scope: Hanya ebook gratis (is_free = true)
      */
     public function scopeFree($query)
     {
@@ -63,7 +65,7 @@ class Ebook extends Model
     }
 
     /**
-     * Scope: Hanya ebook premium
+     * Scope: Hanya ebook premium (is_free = false)
      */
     public function scopePremium($query)
     {
@@ -71,7 +73,7 @@ class Ebook extends Model
     }
 
     /**
-     * Scope: Hanya ebook yang aktif
+     * Scope: Hanya ebook yang aktif (is_active = true)
      */
     public function scopeActive($query)
     {
@@ -79,7 +81,9 @@ class Ebook extends Model
     }
 
     /**
-     * Akses custom: Rata-rata rating
+     * Akses custom: Menghitung rata-rata rating ebook
+     * 
+     * Mengambil rata-rata rating dari semua rating yang ada
      */
     public function getAverageRatingAttribute(): float
     {
@@ -87,10 +91,28 @@ class Ebook extends Model
     }
 
     /**
-     * Akses custom: Total halaman dari semua chapter
+     * Akses custom: Menghitung total halaman dari semua chapter
+     * 
+     * Menjumlahkan halaman dari semua chapter yang terkait dengan ebook ini.
      */
     public function getTotalPagesAttribute(): int
     {
         return $this->chapters()->sum('page_count');
+    }
+
+    /**
+     * Cek apakah ebook ini dapat diakses oleh user tertentu
+     * 
+     * Ebook gratis dapat diakses oleh siapa saja, sementara ebook berbayar hanya bisa diakses oleh premium user.
+     */
+    public function canBeAccessedBy($user): bool
+    {
+        // Ebook gratis dapat diakses oleh semua user
+        if ($this->is_free) {
+            return true;
+        }
+
+        // Ebook premium hanya bisa diakses oleh user yang memiliki akses premium
+        return $user->hasPremiumAccess();
     }
 }
