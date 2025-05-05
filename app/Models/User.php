@@ -26,7 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'points',
         'email_verified_at',
-        'last_active_at' // Added for tracking active users
+        'last_active_at'
     ];
 
     /**
@@ -52,26 +52,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_paid' => 'boolean',
             'role' => 'string',
             'points' => 'integer',
-            'last_active_at' => 'datetime' // Added for tracking active users
+            'last_active_at' => 'datetime'
         ];
-    }
-
-    /**
-     * Get the user's reading history.
-     */
-    public function readingHistory()
-    {
-        return $this->hasMany(ReadingHistory::class);
-    }
-
-    /**
-     * Get the ebooks purchased by the user.
-     */
-    public function purchasedEbooks()
-    {
-        return $this->belongsToMany(Ebook::class, 'purchases')
-                   ->withPivot(['purchased_at'])
-                   ->withTimestamps();
     }
 
     /**
@@ -80,14 +62,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ratings()
     {
         return $this->hasMany(Rating::class);
-    }
-
-    /**
-     * Check if the user has purchased a specific ebook.
-     */
-    public function hasPurchased(Ebook $ebook): bool
-    {
-        return $this->purchasedEbooks()->where('ebook_id', $ebook->id)->exists();
     }
 
     /**
@@ -100,6 +74,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Check if the user has premium access.
+     * Now determined manually by admin through is_paid
      */
     public function hasPremiumAccess(): bool
     {
@@ -141,37 +116,11 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Scope for active users (used in dashboard stats).
+     * Scope for active users.
      */
     public function scopeActive($query)
     {
         return $query->where('last_active_at', '>=', now()->subDay());
-    }
-
-    /**
-     * Get reading progress for a specific ebook.
-     */
-    public function readingProgress(Ebook $ebook): ?int
-    {
-        $history = $this->readingHistory()
-                      ->where('ebook_id', $ebook->id)
-                      ->first();
-
-        return $history ? $history->progress : null;
-    }
-
-    /**
-     * Get the most read ebooks by this user.
-     */
-    public function mostReadEbooks($limit = 5)
-    {
-        return $this->readingHistory()
-                  ->select('ebook_id', DB::raw('count(*) as read_count'))
-                  ->groupBy('ebook_id')
-                  ->orderBy('read_count', 'desc')
-                  ->limit($limit)
-                  ->with('ebook')
-                  ->get();
     }
 
     /**

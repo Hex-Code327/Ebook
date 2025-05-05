@@ -24,17 +24,27 @@ class ConfirmablePasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Validate the password input against the user's current password
         if (! Auth::guard('web')->validate([
             'email' => $request->user()->email,
             'password' => $request->password,
         ])) {
+            // If password doesn't match, throw a validation exception
             throw ValidationException::withMessages([
                 'password' => __('auth.password'),
             ]);
         }
 
+        // Store the timestamp of when the password was confirmed
         $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Check the user's role and redirect accordingly
+        if (Auth::user()->role === 'admin') {
+            // Redirect to the admin dashboard if the user is an admin
+            return redirect()->route('admin.dashboard');
+        }
+
+        // Otherwise, redirect to the user dashboard
+        return redirect()->route('user.dashboard');
     }
 }

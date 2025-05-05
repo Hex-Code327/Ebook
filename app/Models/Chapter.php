@@ -12,7 +12,8 @@ class Chapter extends Model
         'ebook_id',
         'title',
         'order_number',
-        'introduction'
+        'introduction',
+        'page_count'
     ];
 
     public function ebook(): BelongsTo

@@ -4,116 +4,58 @@ namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ebook;
-use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
-    /**
-     * Menampilkan halaman beranda untuk tamu
-     */
-    public function index()
+    public function index(Request $request)
     {
-        // Ambil 6 ebook gratis terbaru
-        $freeEbooks = Ebook::where('is_free', true)
-            ->with('categories')
-            ->latest()
-            ->take(6)
-            ->get();
+        $freeEbooks = Ebook::where('is_free', true)->latest()->take(6)->get();
+        $premiumEbooks = Ebook::where('is_free', false)->latest()->take(6)->get();
 
-        // Ambil 6 ebook premium terpopuler
-        $premiumEbooks = Ebook::where('is_free', false)
-            ->withCount('purchases')
-            ->orderBy('purchases_count', 'desc')
-            ->take(6)
-            ->get();
-
-        // Ambil semua kategori
-        $categories = Category::withCount('ebooks')
-            ->having('ebooks_count', '>', 0)
-            ->orderBy('name')
-            ->get();
-
-        return view('guest.home', [
-            'freeEbooks' => $freeEbooks,
-            'premiumEbooks' => $premiumEbooks,
-            'categories' => $categories
-        ]);
+        return view('guest.home', compact('freeEbooks', 'premiumEbooks'));
     }
 
-    /**
-     * Menampilkan detail ebook
-     */
-    public function showEbook(Ebook $ebook)
-    {
-        // Rekomendasi ebook terkait
-        $relatedEbooks = Ebook::whereHas('categories', function($query) use ($ebook) {
-                $query->whereIn('categories.id', $ebook->categories->pluck('id'));
-            })
-            ->where('id', '!=', $ebook->id)
-            ->inRandomOrder()
-            ->take(4)
-            ->get();
-
-        return view('guest.ebook-detail', [
-            'ebook' => $ebook,
-            'relatedEbooks' => $relatedEbooks
-        ]);
-    }
-
-    /**
-     * Mencari ebook berdasarkan keyword
-     */
     public function search(Request $request)
     {
         $request->validate([
             'keyword' => 'required|string|min:3'
         ]);
 
-        $ebooks = Ebook::where('title', 'like', '%'.$request->keyword.'%')
-            ->orWhere('synopsis', 'like', '%'.$request->keyword.'%')
+        $ebooks = Ebook::where('title', 'like', '%' . $request->keyword . '%')
+            ->orWhere('synopsis', 'like', '%' . $request->keyword . '%')
             ->paginate(12);
 
-        return view('guest.search-results', [
-            'ebooks' => $ebooks,
-            'keyword' => $request->keyword
-        ]);
+        return view('guest.search-results', compact('ebooks'))->with('keyword', $request->keyword);
     }
 
-    /**
-     * Menampilkan ebook berdasarkan kategori
-     */
-    public function byCategory(Category $category)
+    public function byType($type)
     {
-        $ebooks = $category->ebooks()
-            ->latest()
-            ->paginate(12);
+        $isFree = $type === 'gratis' ? true : false;
 
-        return view('guest.category', [
-            'category' => $category,
-            'ebooks' => $ebooks
-        ]);
+        $ebooks = Ebook::where('is_free', $isFree)->latest()->paginate(12);
+
+        return view('guest.ebook-by-type', compact('ebooks', 'type'));
     }
 
-    /**
-     * Menampilkan halaman tentang kami
-     */
+    public function byCategory($category)
+    {
+        $ebooks = Ebook::where('category', $category)->latest()->paginate(12);
+
+        return view('guest.ebook-by-category', compact('ebooks', 'category'));
+    }
+
     public function about()
     {
         return view('guest.about');
     }
 
-    /**
-     * Menampilkan halaman kontak
-     */
     public function contact()
     {
         return view('guest.contact');
     }
 
-    /**
-     * Menampilkan halaman FAQ
-     */
     public function faq()
     {
         $faqs = [
@@ -124,6 +66,10 @@ class HomeController extends Controller
             [
                 'question' => 'Apakah ada ebook gratis?',
                 'answer' => 'Ya, kami menyediakan koleksi ebook gratis yang bisa dibaca tanpa biaya.'
+            ],
+            [
+                'question' => 'Bagaimana cara mengakses ebook premium?',
+                'answer' => 'Anda perlu login terlebih dahulu untuk mengakses ebook premium.'
             ]
         ];
 

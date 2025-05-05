@@ -24,16 +24,13 @@ class DashboardController extends Controller
             'free_ebooks' => Ebook::where('is_free', true)->count(),
             'premium_users' => User::where('is_paid', true)->count(),
             'premium_percentage' => User::count() > 0 ? round((User::where('is_paid', true)->count() / User::count()) * 100, 2) : 0,
-            'active_reads' => 0, // Anda perlu menyesuaikan ini dengan logika aplikasi Anda
-            'read_increase' => 0, // Anda perlu menyesuaikan ini dengan logika aplikasi Anda
         ];
 
         // Data untuk grafik aktivitas
         $activityChart = $this->getActivityChartData();
 
-        // Data ebook terpopuler (contoh - sesuaikan dengan logika Anda)
-        $popularEbooks = Ebook::withCount('reads')
-            ->orderBy('reads_count', 'desc')
+        // Data ebook terpopuler
+        $popularEbooks = Ebook::orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
@@ -76,13 +73,9 @@ class DashboardController extends Controller
         ->pluck('count', 'date')
         ->toArray();
 
-        // Get reading activity data (contoh - sesuaikan dengan logika Anda)
-        $readers = array_fill_keys(array_keys($dates), rand(5, 20));
-
         return [
             'labels' => array_keys($dates),
             'registrations' => array_values(array_merge($dates, $registrations)),
-            'readers' => array_values($readers)
         ];
     }
 

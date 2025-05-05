@@ -4,7 +4,7 @@
              class="card-img-top" 
              alt="{{ $ebook->title }}">
         @if(!$ebook->is_free)
-        <span class="badge bg-warning price-badge">
+        <span class="badge bg-warning price-badge premium-lock">
             Rp {{ number_format($ebook->price) }}
         </span>
         @endif
@@ -24,7 +24,7 @@
         </div>
     </div>
     <div class="card-footer bg-transparent">
-        <a href="{{ route('guest.ebook.show', $ebook->slug) }}" 
+        <a href="{{ route('guest.ebooks.show', $ebook->slug) }}" 
            class="btn btn-sm btn-primary w-100">
             Detail
         </a>
@@ -58,5 +58,8 @@
     position: absolute;
     top: 10px;
     right: 10px;
+}
+.premium-lock {
+    cursor: pointer;
 }
 </style>

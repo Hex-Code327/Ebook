@@ -14,14 +14,32 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
+        // Jika email sudah diverifikasi sebelumnya, arahkan ke dashboard yang sesuai
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+            // Jika email sudah diverifikasi, arahkan ke dashboard sesuai role
+            return $this->redirectBasedOnRole($request);
         }
 
+        // Jika email belum diverifikasi, tandai sebagai verified
         if ($request->user()->markEmailAsVerified()) {
+            // Trigger event verified
             event(new Verified($request->user()));
         }
 
-        return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+        // Setelah verifikasi, arahkan ke dashboard sesuai role
+        return $this->redirectBasedOnRole($request);
+    }
+
+    /**
+     * Redirect user based on their role after email verification.
+     */
+    protected function redirectBasedOnRole($request): RedirectResponse
+    {
+        // Arahkan berdasarkan role pengguna (admin atau user biasa)
+        if ($request->user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        return redirect()->route('user.dashboard');
     }
 }

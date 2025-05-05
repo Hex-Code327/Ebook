@@ -3,6 +3,7 @@
 @section('title', 'Beranda - Ebook Platform')
 
 @section('content')
+
 <!-- Hero Section -->
 <section class="hero-section bg-primary text-white py-5">
     <div class="container">
@@ -28,51 +29,21 @@
     </div>
 </section>
 
-<!-- Kategori -->
-<section class="py-5">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold">Kategori Populer</h2>
-            <a href="{{ route('guest.categories') }}" class="btn btn-outline-primary">
-                Lihat Semua
-            </a>
-        </div>
-        <div class="row">
-            @foreach($categories->take(6) as $category)
-            <div class="col-md-4 col-lg-2 mb-3">
-                <a href="{{ route('guest.category', $category->slug) }}" 
-                   class="card category-card h-100 text-center">
-                    <div class="card-body">
-                        <div class="avatar avatar-lg mb-2">
-                            <span class="avatar-initial rounded bg-label-{{ ['primary','success','warning','danger','info'][$loop->index % 5] }}">
-                                <i class="bx bx-book"></i>
-                            </span>
-                        </div>
-                        <h6 class="mb-0">{{ $category->name }}</h6>
-                        <small class="text-muted">{{ $category->ebooks_count }} ebook</small>
-                    </div>
-                </a>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-
 <!-- Ebook Gratis -->
 <section class="py-5 bg-light">
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold">Ebook Gratis</h2>
-            <a href="{{ route('guest.free-ebooks') }}" class="btn btn-outline-primary">
-                Lihat Semua
-            </a>
+            <a href="{{ route('guest.ebooks.byType', 'free') }}" class="btn btn-outline-primary">Lihat Semua</a>
         </div>
         <div class="row">
-            @foreach($freeEbooks as $ebook)
-            <div class="col-md-4 col-lg-2 mb-4">
-                @include('components.ebook-card', ['ebook' => $ebook])
-            </div>
-            @endforeach
+            @forelse($freeEbooks as $ebook)
+                <div class="col-md-4 col-lg-2 mb-4">
+                    @include('components.ebook-card', ['ebook' => $ebook])
+                </div>
+            @empty
+                <p class="text-muted">Belum ada ebook gratis tersedia.</p>
+            @endforelse
         </div>
     </div>
 </section>
@@ -82,17 +53,36 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold">Ebook Premium</h2>
-            <a href="{{ route('guest.premium-ebooks') }}" class="btn btn-outline-primary">
-                Lihat Semua
-            </a>
+            <a href="{{ route('guest.ebooks.byType', 'premium') }}" class="btn btn-outline-primary">Lihat Semua</a>
         </div>
         <div class="row">
-            @foreach($premiumEbooks as $ebook)
-            <div class="col-md-4 col-lg-2 mb-4">
-                @include('components.ebook-card', ['ebook' => $ebook])
-            </div>
-            @endforeach
+            @forelse($premiumEbooks as $ebook)
+                <div class="col-md-4 col-lg-2 mb-4">
+                    @include('components.ebook-card', [
+                        'ebook' => $ebook,
+                        'premiumLock' => true
+                    ])
+                </div>
+            @empty
+                <p class="text-muted">Belum ada ebook premium tersedia.</p>
+            @endforelse
         </div>
     </div>
 </section>
+
+@push('scripts')
+<script>
+    // Redirect non-login user ketika klik ebook premium
+    document.querySelectorAll('.premium-lock').forEach(element => {
+        element.addEventListener('click', function(e) {
+            const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+            if (!isLoggedIn) {
+                e.preventDefault();
+                window.location.href = "{{ route('login') }}";
+            }
+        });
+    });
+</script>
+@endpush
+
 @endsection

@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -29,7 +28,12 @@ class EbookController extends Controller
             'grade_level' => 'required',
             'goal' => 'required',
             'cover_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'is_free' => 'boolean'
+            'is_free' => 'boolean',
+            'author' => 'nullable|string',
+            'published_date' => 'nullable|date',
+            'page_count' => 'nullable|integer',
+            'language' => 'nullable|string',
+            'is_active' => 'boolean'
         ]);
 
         $path = $request->file('cover_image')->store('ebook_covers', 'public');
@@ -54,7 +58,12 @@ class EbookController extends Controller
             'grade_level' => 'required',
             'goal' => 'required',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'is_free' => 'boolean'
+            'is_free' => 'boolean',
+            'author' => 'nullable|string',
+            'published_date' => 'nullable|date',
+            'page_count' => 'nullable|integer',
+            'language' => 'nullable|string',
+            'is_active' => 'boolean'
         ]);
 
         if ($request->hasFile('cover_image')) {

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
 
 class Ebook extends Model
@@ -20,7 +19,7 @@ class Ebook extends Model
         'published_date',
         'page_count',
         'language',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [
@@ -30,32 +29,15 @@ class Ebook extends Model
     ];
 
     /**
-     * Get the chapters for the ebook.
+     * Relasi: Ebook memiliki banyak chapter
      */
     public function chapters(): HasMany
     {
-        return $this->hasMany(Chapter::class)->orderBy('order');
+        return $this->hasMany(Chapter::class)->orderBy('order_number');
     }
 
     /**
-     * Get the reading history records for this ebook.
-     */
-    public function readingHistory(): HasMany
-    {
-        return $this->hasMany(ReadingHistory::class);
-    }
-
-    /**
-     * Get the users who have purchased this ebook.
-     */
-    public function purchasedBy(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'purchases')
-                   ->withTimestamps();
-    }
-
-    /**
-     * Get the ratings for this ebook.
+     * Relasi: Ebook memiliki banyak rating
      */
     public function ratings(): HasMany
     {
@@ -63,7 +45,7 @@ class Ebook extends Model
     }
 
     /**
-     * Get the URL for the cover image.
+     * Akses custom: URL gambar cover ebook
      */
     public function getCoverUrlAttribute(): string
     {
@@ -73,7 +55,7 @@ class Ebook extends Model
     }
 
     /**
-     * Scope for free ebooks.
+     * Scope: Hanya ebook gratis
      */
     public function scopeFree($query)
     {
@@ -81,7 +63,7 @@ class Ebook extends Model
     }
 
     /**
-     * Scope for premium ebooks.
+     * Scope: Hanya ebook premium
      */
     public function scopePremium($query)
     {
@@ -89,7 +71,7 @@ class Ebook extends Model
     }
 
     /**
-     * Scope for active ebooks.
+     * Scope: Hanya ebook yang aktif
      */
     public function scopeActive($query)
     {
@@ -97,23 +79,15 @@ class Ebook extends Model
     }
 
     /**
-     * Get the read count for this ebook.
-     */
-    public function getReadCountAttribute(): int
-    {
-        return $this->readingHistory()->count();
-    }
-
-    /**
-     * Get the average rating for this ebook.
+     * Akses custom: Rata-rata rating
      */
     public function getAverageRatingAttribute(): float
     {
-        return $this->ratings()->avg('rating') ?? 0;
+        return round($this->ratings()->avg('rating') ?? 0, 1);
     }
 
     /**
-     * Get the total page count for this ebook.
+     * Akses custom: Total halaman dari semua chapter
      */
     public function getTotalPagesAttribute(): int
     {
