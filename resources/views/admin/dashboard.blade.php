@@ -100,26 +100,25 @@
             </div>
         </div>
 
-        <!-- Pendapatan -->
+        <!-- Statistik Premium -->
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="avatar">
                             <span class="avatar-initial rounded bg-label-warning">
-                                <i class="bx bx-dollar fs-4"></i>
+                                <i class="bx bx-crown fs-4"></i>
                             </span>
                         </div>
                         <div class="text-end">
-                            <h3 class="mb-0">Rp {{ number_format($stats['revenue'], 0, ',', '.') }}</h3>
-                            <small class="text-muted">Pendapatan Bulan Ini</small>
+                            <h3 class="mb-0">{{ $stats['premium_users'] }}</h3>
+                            <small class="text-muted">Pengguna Premium</small>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer bg-transparent pt-0">
-                    <small class="{{ $stats['revenue_change'] >= 0 ? 'text-success' : 'text-danger' }}">
-                        <i class="bx bx-{{ $stats['revenue_change'] >= 0 ? 'up' : 'down' }}-arrow-alt"></i> 
-                        {{ abs($stats['revenue_change']) }}% dari bulan lalu
+                    <small class="text-muted">
+                        <i class="bx bx-info-circle"></i> {{ $stats['premium_percentage'] }}% dari total
                     </small>
                 </div>
             </div>

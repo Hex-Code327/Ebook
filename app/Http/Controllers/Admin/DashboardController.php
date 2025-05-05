@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Ebook;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -15,21 +16,74 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        // Hitung statistik dasar
         $stats = [
             'total_users' => User::count(),
             'new_users' => User::where('created_at', '>=', now()->subDays(7))->count(),
             'total_ebooks' => Ebook::count(),
             'free_ebooks' => Ebook::where('is_free', true)->count(),
+            'premium_users' => User::where('is_paid', true)->count(),
+            'premium_percentage' => User::count() > 0 ? round((User::where('is_paid', true)->count() / User::count()) * 100, 2) : 0,
+            'active_reads' => 0, // Anda perlu menyesuaikan ini dengan logika aplikasi Anda
+            'read_increase' => 0, // Anda perlu menyesuaikan ini dengan logika aplikasi Anda
         ];
 
+        // Data untuk grafik aktivitas
+        $activityChart = $this->getActivityChartData();
+
+        // Data ebook terpopuler (contoh - sesuaikan dengan logika Anda)
+        $popularEbooks = Ebook::withCount('reads')
+            ->orderBy('reads_count', 'desc')
+            ->take(5)
+            ->get();
+
+        // Pengguna terbaru
         $recentUsers = User::latest()
             ->take(5)
-            ->get(['id', 'name', 'email', 'created_at']);
+            ->get(['id', 'name', 'email', 'is_paid', 'created_at']);
 
         return view('admin.dashboard', [
             'stats' => $stats,
+            'activityChart' => $activityChart,
+            'popularEbooks' => $popularEbooks,
             'recentUsers' => $recentUsers
         ]);
+    }
+
+    /**
+     * Mengambil data untuk grafik aktivitas
+     */
+    protected function getActivityChartData()
+    {
+        $endDate = Carbon::now();
+        $startDate = Carbon::now()->subDays(30);
+
+        // Generate all dates in range
+        $dates = [];
+        $currentDate = clone $startDate;
+        while ($currentDate <= $endDate) {
+            $dates[$currentDate->format('Y-m-d')] = 0;
+            $currentDate->addDay();
+        }
+
+        // Get actual registration data
+        $registrations = User::select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('COUNT(*) as count')
+        )
+        ->whereBetween('created_at', [$startDate, $endDate])
+        ->groupBy('date')
+        ->pluck('count', 'date')
+        ->toArray();
+
+        // Get reading activity data (contoh - sesuaikan dengan logika Anda)
+        $readers = array_fill_keys(array_keys($dates), rand(5, 20));
+
+        return [
+            'labels' => array_keys($dates),
+            'registrations' => array_values(array_merge($dates, $registrations)),
+            'readers' => array_values($readers)
+        ];
     }
 
     /**
@@ -79,30 +133,5 @@ class DashboardController extends Controller
 
         return back()
             ->with('success', 'User berhasil dinonaktifkan');
-    }
-
-    /**
-     * Menampilkan statistik dalam format JSON (untuk AJAX)
-     */
-    public function getStats()
-    {
-        $stats = [
-            'users' => User::select(
-                DB::raw('COUNT(*) as count'),
-                DB::raw("DATE_FORMAT(created_at,'%Y-%m-%d') as date")
-            )
-            ->where('created_at', '>=', now()->subDays(30))
-            ->groupBy('date')
-            ->get(),
-
-            'ebooks' => Ebook::select(
-                DB::raw('COUNT(*) as count'),
-                DB::raw('is_free as type')
-            )
-            ->groupBy('type')
-            ->get()
-        ];
-
-        return response()->json($stats);
     }
 }

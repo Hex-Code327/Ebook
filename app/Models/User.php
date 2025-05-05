@@ -13,7 +13,7 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, Notifiable;
 
     /**
-     * Kolom yang bisa diisi secara massal
+     * The attributes that are mass assignable.
      *
      * @var array<string>
      */
@@ -25,11 +25,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_paid',
         'avatar',
         'points',
-        'email_verified_at'
+        'email_verified_at',
+        'last_active_at' // Added for tracking active users
     ];
 
     /**
-     * Kolom yang harus disembunyikan saat serialisasi
+     * The attributes that should be hidden for serialization.
      *
      * @var array<string>
      */
@@ -39,7 +40,7 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * Konversi tipe data atribut
+     * The attributes that should be cast.
      *
      * @return array<string, string>
      */
@@ -50,12 +51,13 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'is_paid' => 'boolean',
             'role' => 'string',
-            'points' => 'integer'
+            'points' => 'integer',
+            'last_active_at' => 'datetime' // Added for tracking active users
         ];
     }
 
     /**
-     * Relasi ke model ReadingHistory
+     * Get the user's reading history.
      */
     public function readingHistory()
     {
@@ -63,25 +65,17 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Relasi ke model Ebook melalui purchases (ebook yang dibeli)
+     * Get the ebooks purchased by the user.
      */
     public function purchasedEbooks()
     {
         return $this->belongsToMany(Ebook::class, 'purchases')
-                   ->withPivot(['amount', 'payment_method', 'transaction_id', 'purchased_at'])
+                   ->withPivot(['purchased_at'])
                    ->withTimestamps();
     }
 
     /**
-     * Relasi ke model Payment
-     */
-    public function payments()
-    {
-        return $this->hasMany(Payment::class);
-    }
-
-    /**
-     * Relasi ke model Rating
+     * Get the user's ratings.
      */
     public function ratings()
     {
@@ -89,7 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Cek apakah user sudah membeli ebook tertentu
+     * Check if the user has purchased a specific ebook.
      */
     public function hasPurchased(Ebook $ebook): bool
     {
@@ -97,7 +91,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Cek apakah user adalah admin
+     * Check if the user is an admin.
      */
     public function isAdmin(): bool
     {
@@ -105,7 +99,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Cek apakah user memiliki akses premium
+     * Check if the user has premium access.
      */
     public function hasPremiumAccess(): bool
     {
@@ -113,7 +107,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get URL avatar
+     * Get the URL for the user's avatar.
      */
     public function getAvatarUrlAttribute(): string
     {
@@ -123,7 +117,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Tambah poin ke user
+     * Add points to the user.
      */
     public function addPoints(int $points): void
     {
@@ -131,7 +125,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Scope untuk user premium
+     * Scope for premium users.
      */
     public function scopePremium($query)
     {
@@ -139,7 +133,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Scope untuk user reguler
+     * Scope for regular users.
      */
     public function scopeRegular($query)
     {
@@ -147,7 +141,15 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Dapatkan progress membaca ebook tertentu
+     * Scope for active users (used in dashboard stats).
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('last_active_at', '>=', now()->subDay());
+    }
+
+    /**
+     * Get reading progress for a specific ebook.
      */
     public function readingProgress(Ebook $ebook): ?int
     {
@@ -156,5 +158,27 @@ class User extends Authenticatable implements MustVerifyEmail
                       ->first();
 
         return $history ? $history->progress : null;
+    }
+
+    /**
+     * Get the most read ebooks by this user.
+     */
+    public function mostReadEbooks($limit = 5)
+    {
+        return $this->readingHistory()
+                  ->select('ebook_id', DB::raw('count(*) as read_count'))
+                  ->groupBy('ebook_id')
+                  ->orderBy('read_count', 'desc')
+                  ->limit($limit)
+                  ->with('ebook')
+                  ->get();
+    }
+
+    /**
+     * Mark the user as active.
+     */
+    public function markAsActive()
+    {
+        $this->update(['last_active_at' => now()]);
     }
 }
